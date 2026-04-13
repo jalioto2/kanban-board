@@ -71,6 +71,7 @@ export default function App(){
 
     const newTasks = Array.from(tasks);
     const taskIndex = newTasks.findIndex(t => t.id === draggableId);
+    const oldStatus = newTasks[taskIndex].status;
     
     // Avoid a mutating state by making new variables
     // using the spread operator (...) to update the status safely.
@@ -82,10 +83,18 @@ export default function App(){
     setTasks(newTasks);
 
     // Update Supabase in the background
-    await supabase
+    const { error } = await supabase
       .from('tasks')
       .update({ status: destination.droppableId })
       .eq('id', draggableId);
+
+      if (error) {
+        console.error("Update failed:", error.message);
+        alert("Could not dave move to database. Reverting ...")
+
+        //Move it back in the UI
+        fetchTasks();
+      }
   };
 
   // Helper to open modal for a specific column
@@ -113,7 +122,6 @@ const filteredTasks = tasks.filter(task =>
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] p-4 md:p-8">
-      {/*Header & Search Area*/}
       <header className="mb-10 max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Team Board</h1>
@@ -139,7 +147,6 @@ const filteredTasks = tasks.filter(task =>
         </div>
       </header>
 
-      {/*Dashboard Summary Stats*/}
       <div className="max-w-7xl mx-auto mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Tasks</p>
@@ -155,7 +162,6 @@ const filteredTasks = tasks.filter(task =>
         </div>
       </div>
 
-      {/*The Kanban Board*/}
       <main className="max-w-7xl mx-auto overflow-x-auto pb-4">
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex gap-6 min-w-max md:min-w-0 md:grid md:grid-cols-4">
@@ -171,7 +177,6 @@ const filteredTasks = tasks.filter(task =>
         </DragDropContext>
       </main>
 
-      {/*Modal Overlay*/}
       <NewTaskModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
